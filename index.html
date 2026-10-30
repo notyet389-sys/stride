@@ -49,7 +49,10 @@ nav button[aria-current="true"]{color:var(--move);box-shadow:inset 0 3px 0 var(-
 .orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--mind),var(--move));display:grid;place-items:center;color:#fff;font-weight:700;transform:scale(1);transition:transform 4s ease-in-out;box-shadow:0 0 0 14px color-mix(in srgb,var(--mind) 18%,transparent)}
 .moods button{flex:1}
 .ok{color:var(--mute);font-size:13px;margin-top:10px}
-input{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+.msg{padding:10px 12px;border-radius:14px;margin-bottom:8px;background:var(--bg)}
+.msg.me{background:var(--move);color:var(--on);margin-left:20%}
+.msg.bot{margin-right:20%}
 input:focus-visible{outline:3px solid var(--move);outline-offset:1px}
 .meal{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:15px;gap:8px}
 .meal span:last-child{display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--mute)}
@@ -79,6 +82,9 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
       <div><span class="dot" style="background:var(--water)"></span>Water<b id="l-water"></b></div>
       <div><span class="dot" style="background:var(--mind)"></span>Mind<b id="l-mind"></b></div>
     </div></div></div>
+  <div class="card"><h3>💬 Pulse, your workout buddy</h3>
+    <p class="ok" id="buddy-greet" style="margin:0 0 12px"></p>
+    <button class="ghost" data-v="buddy">Chat with Pulse</button></div>
   <div class="card"><h3>Quick log</h3>
     <div class="row">
       <button data-add="move" data-n="10">Add 10 min movement</button>
@@ -163,6 +169,20 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
   <div class="card"><h3>Achievements</h3><div id="ach-list"></div></div>
 </section>
 
+<section class="view" id="v-buddy">
+  <h1>Pulse</h1><p class="sub">Your workout buddy. Cheers you on, picks your workouts, and talks you through them.</p>
+  <div class="card"><div id="buddy-msgs" style="margin-bottom:12px;max-height:320px;overflow:auto"></div>
+    <div class="row" style="flex-wrap:nowrap"><input id="buddy-in" placeholder="Talk to Pulse..." aria-label="Message Pulse" style="flex:1"><button id="buddy-send">Send</button></div>
+    <div class="row" style="margin-top:12px"><button class="ghost" id="buddy-pick">Pick my workout</button><button class="ghost" id="buddy-mot">Motivate me</button><button class="ghost" id="buddy-voice">Voice cues: On</button></div>
+    <p class="ok">Pulse is a motivator, not a doctor. For health questions, talk to a clinician.</p></div>
+  <div class="card"><h3>Real AI chat (optional)</h3>
+    <p class="ok" style="margin-top:0">Add your own API key to chat with a real AI instead of scripted replies. Your key stays on this phone only.</p>
+    <div class="row" style="flex-wrap:nowrap;margin-bottom:10px"><select id="buddy-provider" aria-label="AI provider" style="flex:1"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="google">Google</option></select><input id="buddy-model" placeholder="Model" aria-label="Model" value="gpt-4o-mini" style="flex:1"></div>
+    <input id="buddy-key" type="password" placeholder="API key" aria-label="API key" style="width:100%;margin-bottom:10px">
+    <div class="row"><button id="buddy-save">Save key</button><button class="ghost" id="buddy-clear">Remove key</button></div>
+    <p class="ok" id="buddy-key-note"></p></div>
+</section>
+
 <section class="view" id="v-pro">
   <h1>Stride Pro</h1><p class="sub" id="pro-status"></p>
   <div class="row plans">
@@ -170,7 +190,7 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
     <button class="plan sel" id="plan-y"><b>Yearly</b><span>$49.99 / year</span><em>Save 48%</em></button>
   </div>
   <div class="card"><h3>Free</h3>
-    <ul class="f"><li>3 routines: Full body, Core, Stretch</li><li>Calorie log with a daily goal of 2,000</li><li>Progress rings, mood check-in, breathing</li></ul>
+    <ul class="f"><li>3 routines: Full body, Core, Stretch</li><li>Calorie log with a daily goal of 2,000</li><li>Progress rings, mood check-in, breathing</li><li>Pulse, your workout buddy — daily motivation and workout voice cues</li></ul>
     <h3>Pro</h3>
     <ul class="f" style="margin:0"><li>15 more routines, including HIIT burn, Yoga flow, Pilates core, Boxing cardio and Barre basics</li><li>Build and save your own workouts</li><li>Set your own calorie goal</li><li>Weekly calorie trends</li><li>Guided programs: a 7-day beginner plan and 30-day core and HIIT challenges</li><li>Weight tracker with trend view</li><li>Full stats, personal records and achievements</li></ul></div>
   <button class="big" id="pro-go"></button>
@@ -184,6 +204,7 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
   <button data-v="move">Move</button>
   <button data-v="programs">Programs</button>
   <button data-v="stats">Stats</button>
+  <button data-v="buddy">Buddy</button>
   <button data-v="mind">Breathe</button>
   <button data-v="pro">Pro</button>
 </div></nav>
@@ -219,6 +240,7 @@ function render(){
   $('bars').innerHTML=bars;
   for(i=0;i<365;i++){dt=new Date();dt.setDate(dt.getDate()-i);var e=S.days[key(dt)];if(e&&e.move>=GOAL.move)streak++;else if(i>0)break;else if(i===0)continue;}
   $('streak').textContent=streak?streak+'-day streak of hitting '+GOAL.move+' minutes.':'Hit '+GOAL.move+' minutes today to start a streak.';
+  $('buddy-greet').textContent=buddyGreet();
   renderPrograms();renderStats();
 }
 document.addEventListener('click',function(e){
@@ -229,7 +251,7 @@ document.addEventListener('click',function(e){
 });
 function show(v){
   if(!isPro()&&(v==='programs'||v==='stats'))v='pro';
-  ['today','move','programs','stats','mind','pro'].forEach(function(n){$('v-'+n).classList.toggle('on',n===v);});
+  ['today','move','programs','stats','buddy','mind','pro'].forEach(function(n){$('v-'+n).classList.toggle('on',n===v);});
   [].forEach.call($('nav').children,function(x){x.setAttribute('aria-current',x.dataset.v===v);});
   if(v!=='move')stopW(); if(v!=='mind')stopB();
   window.scrollTo(0,0);
@@ -272,15 +294,15 @@ function paint(){
 function tick(){
   left--;
   if(left<=0){
-    if(!resting){ if(idx+1>=R[cur].length){finishW();return;} resting=true;left=10; }
-    else{resting=false;idx++;left=30;}
+    if(!resting){ if(idx+1>=R[cur].length){finishW();return;} resting=true;left=10;speak('Rest. Next up: '+R[cur][idx+1]+'.'); }
+    else{resting=false;idx++;left=30;speak(R[cur][idx]+'.');}
   }
   paint();
 }
-function startW(){if(!cur){$('tnext').textContent='Pick a routine first.';return;}idx=0;left=30;resting=false;paint();wt=setInterval(tick,1000);$('tgo').textContent='Stop';}
+function startW(){if(!cur){$('tnext').textContent='Pick a routine first.';return;}idx=0;left=30;resting=false;paint();speak("Let's go! "+cur+'. First up: '+R[cur][0]+'.');wt=setInterval(tick,1000);$('tgo').textContent='Stop';}
 function stopW(){if(wt){clearInterval(wt);wt=null;}$('tgo').textContent='Start routine';}
 function finishW(){stopW();var mins=Math.round(R[cur].length*30/60);day().move+=mins;S.hist=(S.hist||[]).concat([{t:Date.now(),n:cur,m:mins}]).slice(-100);markProgram(cur);save();render();renderHist();
-  $('tphase').textContent='Done';$('tclock').textContent='0:00';$('tclock').className='t';$('tname').textContent='Nice work';$('tnext').textContent='Added '+mins+' min to today.';}
+  $('tphase').textContent='Done';$('tclock').textContent='0:00';$('tclock').className='t';$('tname').textContent='Nice work';$('tnext').textContent='Added '+mins+' min to today.';speak('Nice work! You logged '+mins+' minutes.');}
 $('tgo').addEventListener('click',function(){wt?stopW():startW();});
 
 /* Breathing */
@@ -462,6 +484,101 @@ function renderStats(){
 }
 $('w-add').addEventListener('click',function(){var v=+$('w-in').value;if(!(v>0)){$('w-in').focus();return;}S.weight=(S.weight||[]).concat([{t:Date.now(),w:v}]).slice(-100);save();$('w-in').value='';renderStats();});
 
+/* Pulse, the workout buddy */
+function speak(t){if(S.buddyVoice===false)return;try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t));}catch(e){}}
+function buddyData(){
+  var d=day(),st=0,i,dt,e;
+  for(i=0;i<365;i++){dt=new Date();dt.setDate(dt.getDate()-i);e=S.days[key(dt)];if(e&&e.move>=GOAL.move)st++;else if(i>0)break;else if(i===0)continue;}
+  return {d:d,st:st,prog:S.programs?progById(S.programs.active):null,idx:S.programs?progDayIndex():-1};
+}
+function buddyGreet(){
+  var b=buddyData(),d=b.d;
+  if(b.prog&&b.idx>=0&&b.idx<b.prog.days.length)return 'Day '+(b.idx+1)+' of '+b.prog.name+'. Today: '+b.prog.days[b.idx]+'. Ready when you are.';
+  if(b.st>0&&d.move<GOAL.move)return 'Your '+b.st+'-day streak is on the line. One workout keeps it alive.';
+  if(d.move>=GOAL.move&&d.water>=GOAL.water)return 'All rings on track today. Strong work. Want a bonus round?';
+  if((S.hist||[]).length===0)return "Hey, I'm Pulse. Your first workout is the hardest — and the most satisfying. Pick Full body and let's go.";
+  var last=(S.hist||[])[(S.hist||[]).length-1];
+  return 'Last time you crushed '+last.n+'. Want to beat it today?';
+}
+function pickWorkout(){
+  var b=buddyData();
+  if(b.prog&&b.idx>=0&&b.idx<b.prog.days.length&&b.prog.days[b.idx]!=='Rest')return {r:b.prog.days[b.idx],why:'It is day '+(b.idx+1)+' of '+b.prog.name+'.'};
+  var h=S.hist||[],last=h.length?h[h.length-1].n:'';
+  var hard=['HIIT burn','Tabata blast','Boxing cardio','Strength circuit'];
+  if(hard.indexOf(last)>=0)return {r:'Stretch',why:'Yesterday was intense. Recovery keeps you consistent.'};
+  if(h.length===0)return {r:'Full body',why:'A great first workout.'};
+  var daysSince=h.length?(Date.now()-h[h.length-1].t)/864e5:99;
+  if(daysSince>2)return {r:'Full body',why:'It has been a few days. Ease back in.'};
+  return {r:'Core',why:'A solid all-rounder for today.'};
+}
+var MOT=['You have already done the hard part: showing up.','Small reps, big results. One workout today is a win.','Your future self is cheering for this one.','Strong is a habit. Let\'s build it.','No perfect workout. Just the next one.'];
+function buddyReply(t){
+  t=t.toLowerCase();
+  var b=buddyData(),d=b.d,p;
+  if(t.indexOf('tired')>=0||t.indexOf('sore')>=0||t.indexOf('rest')>=0)return 'Rest is part of training, not quitting. Try Stretch or Desk reset today, and come back strong tomorrow.';
+  if(t.indexOf('weight')>=0){var w=S.weight||[];return w.length?('Your latest weigh-in is '+w[w.length-1].w+'. Log it in Stats whenever you step on the scale.'):"I don't see a weigh-in yet. Log one in Stats and I'll track the trend with you.";}
+  if(t.indexOf('streak')>=0)return b.st?('You are on a '+b.st+'-day streak. Keep it alive with at least '+GOAL.move+' minutes today.'):'No streak yet. Hit '+GOAL.move+' minutes today and the count starts.';
+  if(t.indexOf('program')>=0)return b.prog?('You are on '+b.prog.name+', day '+(b.idx+1)+'. Today: '+b.prog.days[b.idx]+'.'):'No program running. Try the 7-Day Beginner plan in Programs.';
+  if(t.indexOf('food')>=0||t.indexOf('calorie')>=0||t.indexOf('diet')>=0)return 'Today you have logged '+kc(key())+' kcal. Log meals in the Calories card and I\'ll keep the tally.';
+  if(t.indexOf('workout')>=0||t.indexOf('exercise')>=0||t.indexOf('train')>=0){p=pickWorkout();return 'Today I would go with '+p.r+'. '+p.why+' Head to Move and tap it.';}
+  if(t.indexOf('hello')>=0||t.indexOf('hi ')>=0||t==='hi'||t.indexOf('hey')>=0)return buddyGreet();
+  if(t.indexOf('motivat')>=0)return MOT[Math.floor(Math.random()*MOT.length)];
+  if(t.indexOf('help')>=0||t.indexOf('what can you')>=0)return 'I can pick your workout, track your streak, cheer you through routines, and talk training. Ask me about your streak, weight, program, or calories — or add an AI key below for real AI chat.';
+  if(t.indexOf('badge')>=0||t.indexOf('achievement')>=0)return 'Your badges live in Stats. Earn them with workouts, streaks, programs and weigh-ins.';
+  return 'Good question. Ask me to pick your workout, or tell me about your streak, weight, program, or calories.';
+}
+function renderBuddy(){
+  var c=S.buddyChat||[];
+  if(!c.length)c=[{who:'bot',text:buddyGreet()}];
+  $('buddy-msgs').innerHTML=c.map(function(m){return '<div class="msg '+(m.who==='me'?'me':'bot')+'">'+esc(m.text)+'</div>';}).join('');
+  $('buddy-msgs').scrollTop=$('buddy-msgs').scrollHeight;
+}
+function buddySay(text,who){S.buddyChat=(S.buddyChat||[]).concat([{who:who,text:text}]).slice(-40);save();renderBuddy();}
+var buddyBusy=false;
+function buddySummary(){
+  var b=buddyData(),d=b.d,h=S.hist||[],last=h.length?h[h.length-1].n:'none yet';
+  return 'Today: '+d.move+'/'+GOAL.move+' min move, '+d.water+'/'+GOAL.water+' water, '+d.mind+'/'+GOAL.mind+' min mind. Streak: '+b.st+' days. Last workout: '+last+'. Active program: '+(b.prog?b.prog.name+' day '+(b.idx+1):'none')+'.';
+}
+function callAI(k,text){
+  var sys='You are Pulse, a friendly workout buddy inside the Stride fitness app. Be encouraging, concise, and practical. Never give medical diagnoses or specific medical advice; suggest seeing a clinician for health concerns. User data: '+buddySummary();
+  var hist=(S.buddyChat||[]).slice(-7,-1).map(function(m){return {role:m.who==='me'?'user':'assistant',content:m.text};});
+  if(k.provider==='openai'){
+    return fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k.key},body:JSON.stringify({model:k.model,messages:[{role:'system',content:sys}].concat(hist).concat([{role:'user',content:text}])})}).then(function(r){if(!r.ok)throw new Error('request failed ('+r.status+')');return r.json();}).then(function(j){return j.choices[0].message.content;});
+  }
+  if(k.provider==='anthropic'){
+    return fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k.key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:k.model,max_tokens:500,system:sys,messages:hist.concat([{role:'user',content:text}])})}).then(function(r){if(!r.ok)throw new Error('request failed ('+r.status+')');return r.json();}).then(function(j){return j.content[0].text;});
+  }
+  return fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(k.model)+':generateContent?key='+encodeURIComponent(k.key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:sys+'\n\nUser: '+text}]}]})}).then(function(r){if(!r.ok)throw new Error('request failed ('+r.status+')');return r.json();}).then(function(j){return j.candidates[0].content.parts[0].text;});
+}
+function buddySend(){
+  var v=$('buddy-in').value.trim();if(!v||buddyBusy)return;$('buddy-in').value='';
+  buddySay(v,'me');
+  var k=S.buddyKey;
+  if(k&&k.key){
+    buddyBusy=true;buddySay('Thinking…','bot');
+    callAI(k,v).then(function(r){var c=S.buddyChat;c[c.length-1]={who:'bot',text:r};save();renderBuddy();buddyBusy=false;}).catch(function(e){var c=S.buddyChat;c[c.length-1]={who:'bot',text:'Could not reach the AI: '+e.message+'. Check your key and model, or keep chatting with scripted Pulse.'};save();renderBuddy();buddyBusy=false;});
+  }else buddySay(buddyReply(v),'bot');
+}
+$('buddy-send').addEventListener('click',buddySend);
+$('buddy-in').addEventListener('keydown',function(e){if(e.key==='Enter')buddySend();});
+$('buddy-pick').addEventListener('click',function(){var p=pickWorkout();buddySay('Today I would go with '+p.r+'. '+p.why+' Head to Move and tap it.','bot');});
+$('buddy-mot').addEventListener('click',function(){var line=MOT[Math.floor(Math.random()*MOT.length)];buddySay(line,'bot');speak(line);});
+function renderVoiceBtn(){var b=$('buddy-voice');if(b)b.textContent='Voice cues: '+(S.buddyVoice===false?'Off':'On');}
+$('buddy-voice').addEventListener('click',function(){S.buddyVoice=S.buddyVoice===false;save();renderVoiceBtn();});
+var PROVIDER_MODELS={openai:'gpt-4o-mini',anthropic:'claude-3-5-haiku-20241022',google:'gemini-2.0-flash'};
+$('buddy-provider').addEventListener('change',function(){var m=PROVIDER_MODELS[$('buddy-provider').value];if(m)$('buddy-model').value=m;});
+function renderKeyNote(){
+  var k=S.buddyKey;
+  if(k&&k.key){$('buddy-provider').value=k.provider;$('buddy-model').value=k.model;$('buddy-key').value=k.key;$('buddy-key-note').textContent='Key saved on this phone only. Real AI replies are on.';}
+  else $('buddy-key-note').textContent='No key saved. Pulse replies with scripted coaching.';
+}
+$('buddy-save').addEventListener('click',function(){
+  var key=$('buddy-key').value.trim();if(!key){$('buddy-key-note').textContent='Enter a key first.';return;}
+  var model=$('buddy-model').value.trim()||PROVIDER_MODELS[$('buddy-provider').value];
+  S.buddyKey={provider:$('buddy-provider').value,model:model,key:key};save();renderKeyNote();
+});
+$('buddy-clear').addEventListener('click',function(){delete S.buddyKey;save();renderKeyNote();});
+
 /* Pro */
 var PORTAL='',plan='year',LINKS={month:'https://buy.stripe.com/9B6fZi8yeec64SN4nY9R60c',year:'https://buy.stripe.com/6oUbJ2aGmd821GB7Aa9R60b'};
 function renderPro(){
@@ -490,7 +607,7 @@ if(proParam==='month'||proParam==='year'){
   save();history.replaceState(null,'',location.pathname);show('pro');$('pro-note').textContent='Pro unlocked. Thank you!';
 }
 checkPro();
-render();renderCal();renderSteps();renderBP();renderPro();drawRoutines();renderDraft();renderMine();fillGoals();renderHist();
+render();renderCal();renderSteps();renderBP();renderPro();drawRoutines();renderDraft();renderMine();fillGoals();renderHist();renderBuddy();renderVoiceBtn();renderKeyNote();
 })();
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}</script>
