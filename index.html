@@ -63,6 +63,7 @@ button.sm{padding:2px 9px;border-radius:10px;font-size:16px}
 .plan em{font-style:normal;color:var(--mind);font-size:13px}
 ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
 .cg{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mute)}
+.lock{opacity:.55}
 @media (prefers-reduced-motion:reduce){.orb{transition:none}}
 </style>
 </head>
@@ -143,6 +144,25 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
     <button class="big" id="bgo">Start breathing</button>
     <p class="ok" id="bnote"></p></div>
 </section>
+<section class="view" id="v-programs">
+  <h1>Programs</h1><p class="sub">Follow a plan day by day. Finish the prescribed routine to check a day off.</p>
+  <div class="card" id="prog-active"></div>
+  <div id="prog-list"></div>
+</section>
+
+<section class="view" id="v-stats">
+  <h1>Stats</h1><p class="sub">Your all-time numbers, records and achievements.</p>
+  <div class="card"><h3>All time</h3><div id="stat-all"></div></div>
+  <div class="card"><h3>Records</h3><div id="stat-rec"></div></div>
+  <div class="card"><h3>Last 8 weeks (minutes)</h3><div class="bars" id="stat-weeks"></div></div>
+  <div class="card"><h3>Weight</h3>
+    <div class="row" style="flex-wrap:nowrap"><input id="w-in" type="number" inputmode="decimal" placeholder="Weight" aria-label="Weight" style="flex:1"><button id="w-add">Log</button></div>
+    <p class="ok">Use the same unit every time.</p>
+    <div id="w-trend" style="margin-top:12px"></div>
+    <div id="w-list" style="margin-top:10px"></div></div>
+  <div class="card"><h3>Achievements</h3><div id="ach-list"></div></div>
+</section>
+
 <section class="view" id="v-pro">
   <h1>Stride Pro</h1><p class="sub" id="pro-status"></p>
   <div class="row plans">
@@ -152,7 +172,7 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
   <div class="card"><h3>Free</h3>
     <ul class="f"><li>3 routines: Full body, Core, Stretch</li><li>Calorie log with a daily goal of 2,000</li><li>Progress rings, mood check-in, breathing</li></ul>
     <h3>Pro</h3>
-    <ul class="f" style="margin:0"><li>9 more routines, including HIIT burn, Yoga flow and Pilates core</li><li>Build and save your own workouts</li><li>Set your own calorie goal</li><li>Weekly calorie trends</li></ul></div>
+    <ul class="f" style="margin:0"><li>15 more routines, including HIIT burn, Yoga flow, Pilates core, Boxing cardio and Barre basics</li><li>Build and save your own workouts</li><li>Set your own calorie goal</li><li>Weekly calorie trends</li><li>Guided programs: a 7-day beginner plan and 30-day core and HIIT challenges</li><li>Weight tracker with trend view</li><li>Full stats, personal records and achievements</li></ul></div>
   <button class="big" id="pro-go"></button>
   <a id="pro-link" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;color:var(--move);font-weight:700">Open checkout in a new tab</a>
   <p class="ok" id="pro-note">Checkout and billing are handled securely by Stripe. After you pay, you return here and Pro unlocks automatically.</p>
@@ -162,6 +182,8 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
 <nav><div id="nav">
   <button data-v="today" aria-current="true">Today</button>
   <button data-v="move">Move</button>
+  <button data-v="programs">Programs</button>
+  <button data-v="stats">Stats</button>
   <button data-v="mind">Breathe</button>
   <button data-v="pro">Pro</button>
 </div></nav>
@@ -197,6 +219,7 @@ function render(){
   $('bars').innerHTML=bars;
   for(i=0;i<365;i++){dt=new Date();dt.setDate(dt.getDate()-i);var e=S.days[key(dt)];if(e&&e.move>=GOAL.move)streak++;else if(i>0)break;else if(i===0)continue;}
   $('streak').textContent=streak?streak+'-day streak of hitting '+GOAL.move+' minutes.':'Hit '+GOAL.move+' minutes today to start a streak.';
+  renderPrograms();renderStats();
 }
 document.addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
@@ -205,7 +228,8 @@ document.addEventListener('click',function(e){
   if(b.dataset.v){show(b.dataset.v);}
 });
 function show(v){
-  ['today','move','mind','pro'].forEach(function(n){$('v-'+n).classList.toggle('on',n===v);});
+  if(!isPro()&&(v==='programs'||v==='stats'))v='pro';
+  ['today','move','programs','stats','mind','pro'].forEach(function(n){$('v-'+n).classList.toggle('on',n===v);});
   [].forEach.call($('nav').children,function(x){x.setAttribute('aria-current',x.dataset.v===v);});
   if(v!=='move')stopW(); if(v!=='mind')stopB();
   window.scrollTo(0,0);
@@ -224,7 +248,13 @@ var R={
  'Desk reset':['Neck release','Wrist circles','Seated twist','Chest opener','Standing hinge','Deep breaths'],
  'Tabata blast':['Jump squats','Push-up to plank','High knees','Reverse lunges','Mountain climbers','Burpees'],
  'Low impact':['March in place','Step jacks','Wall push-ups','Chair squats','Standing crunches','Arm circles'],
- 'Pilates core':['Hundred','Roll-up','Single-leg stretch','Criss-cross','Swimming','Plank hold']};
+ 'Pilates core':['Hundred','Roll-up','Single-leg stretch','Criss-cross','Swimming','Plank hold'],
+ 'Boxing cardio':['Jab-cross','Hooks','Uppercuts','Speed bag','Duck and weave','Power punches'],
+ 'Barre basics':['Plié squats','Leg lifts','Arabesque hold','Calf raises','Side kicks','Stretch release'],
+ 'Strength circuit':['Push-ups','Squats','Row in plank','Lunges','Dead bugs','Glute bridges'],
+ 'Morning energizer':['Arm circles','March in place','Hip circles','Shoulder rolls','Gentle squats','Deep breaths'],
+ 'Evening wind-down':['Neck rolls','Child pose','Seated twist','Forward fold','Slow breathing','Full-body stretch'],
+ 'Core blast':['Plank','Bicycle crunches','Mountain climbers','Leg raises','Russian twists','Hollow hold']};
 var cur=null,wt=null,idx=0,left=0,resting=false;
 var FREE=['Full body','Core','Stretch'];
 function isPro(){return !!(S.pro&&S.pro.until>Date.now());}
@@ -249,7 +279,7 @@ function tick(){
 }
 function startW(){if(!cur){$('tnext').textContent='Pick a routine first.';return;}idx=0;left=30;resting=false;paint();wt=setInterval(tick,1000);$('tgo').textContent='Stop';}
 function stopW(){if(wt){clearInterval(wt);wt=null;}$('tgo').textContent='Start routine';}
-function finishW(){stopW();var mins=Math.round(R[cur].length*30/60);day().move+=mins;S.hist=(S.hist||[]).concat([{t:Date.now(),n:cur,m:mins}]).slice(-100);save();render();renderHist();
+function finishW(){stopW();var mins=Math.round(R[cur].length*30/60);day().move+=mins;S.hist=(S.hist||[]).concat([{t:Date.now(),n:cur,m:mins}]).slice(-100);markProgram(cur);save();render();renderHist();
   $('tphase').textContent='Done';$('tclock').textContent='0:00';$('tclock').className='t';$('tname').textContent='Nice work';$('tnext').textContent='Added '+mins+' min to today.';}
 $('tgo').addEventListener('click',function(){wt?stopW():startW();});
 
@@ -351,6 +381,86 @@ $('bp-add').addEventListener('click',function(){
   $('bp-s').value=$('bp-d').value=$('bp-p').value='';
   $('bp-note').textContent=bpCat(s,d)+'. One reading is not a diagnosis; talk to a clinician about trends.';renderBP();
 });
+
+/* Programs (Pro) */
+function progDays(kind){
+  if(kind==='beginner')return ['Full body','Rest','Core','Stretch','Rest','Full body','Rest'];
+  var cyc=kind==='core'?['Core','Pilates core','Core blast']:['HIIT burn','Tabata blast','Cardio dance','Boxing cardio'],d=[],i;
+  for(i=0;i<30;i++){
+    if(kind==='core'&&(i+1)%4===0)d.push('Rest');
+    else if(kind==='hiit'&&(i+1)%5===0)d.push('Rest');
+    else d.push(cyc[i%cyc.length]);
+  }
+  return d;
+}
+var PROGRAMS=[
+ {id:'beginner',name:'7-Day Beginner',desc:'Ease in with full-body, core and stretch days.',days:progDays('beginner')},
+ {id:'core',name:'30-Day Core Challenge',desc:'A month of core work with a rest day every 4th day.',days:progDays('core')},
+ {id:'hiit',name:'30-Day HIIT Challenge',desc:'High-energy routines with a rest day every 5th day.',days:progDays('hiit')}];
+function progById(id){for(var i=0;i<PROGRAMS.length;i++){if(PROGRAMS[i].id===id)return PROGRAMS[i];}return null;}
+function progDayIndex(){var a=S.programs;if(!a||!a.start)return -1;return Math.floor((Date.parse(key())-Date.parse(a.start))/864e5);}
+function markProgram(routine){
+  var a=S.programs;if(!a)return;var p=progById(a.active);if(!p)return;var idx=progDayIndex();
+  if(idx<0||idx>=p.days.length)return;if(p.days[idx]===routine){a.done=a.done||{};a.done[idx]=true;}
+}
+function renderPrograms(){
+  var a=S.programs,p=a?progById(a.active):null;
+  if(p){
+    var raw=progDayIndex(),idx=Math.max(0,raw),done=Object.keys(a.done||{}).length;
+    if(raw>=p.days.length){
+      S.programsDone=S.programsDone||[];if(S.programsDone.indexOf(p.id)<0)S.programsDone.push(p.id);S.programs=null;a=null;save();
+      $('prog-active').innerHTML='<h3>Program complete</h3><p class="ok" style="margin:0">Nice work. Pick your next program below.</p>';
+    }else{
+      $('prog-active').innerHTML='<h3>Active: '+p.name+'</h3><p class="ok" style="margin:0 0 8px">Day '+(idx+1)+' of '+p.days.length+' &middot; Today: '+p.days[idx]+'</p><div class="bar"><i style="width:'+Math.round(done/p.days.length*100)+'%;background:var(--move)"></i></div><p class="ok">'+done+' of '+p.days.length+' days done</p><div class="row"><button id="prog-mark">Mark today complete</button><button class="ghost" id="prog-go">Go to routines</button><button class="ghost" id="prog-quit">Quit program</button></div>';
+    }
+  }else{
+    $('prog-active').innerHTML='<h3>No active program</h3><p class="ok" style="margin:0">Join one below. Joining replaces any current program.</p>';
+  }
+  $('prog-list').innerHTML=PROGRAMS.map(function(pr){var active=a&&a.active===pr.id;return '<div class="card"><h3>'+pr.name+'</h3><p class="ok" style="margin:0 0 12px">'+pr.desc+' &middot; '+pr.days.length+' days</p><button class="ghost" data-join="'+pr.id+'" '+(active?'disabled':'')+'>'+(active?'Active':'Join program')+'</button></div>';}).join('');
+}
+$('prog-list').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!b.dataset.join)return;if(!isPro()){show('pro');return;}S.programs={active:b.dataset.join,start:key(),done:{}};save();renderPrograms();});
+$('prog-active').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  if(b.id==='prog-mark'){var a=S.programs;if(!a)return;var idx=progDayIndex();if(idx<0)return;a.done=a.done||{};a.done[idx]=true;save();renderPrograms();}
+  if(b.id==='prog-go'){show('move');}
+  if(b.id==='prog-quit'){S.programs=null;save();renderPrograms();}
+});
+
+/* Stats, weight and achievements (Pro) */
+function longestStreak(){
+  var keys=Object.keys(S.days||{}).sort(),best=0,run=0,prev=null;
+  keys.forEach(function(k){var e=S.days[k];if(!(e&&e.move>=GOAL.move)){run=0;prev=null;return;}
+    var t=Date.parse(k);if(prev!==null&&t-prev===864e5)run++;else run=1;prev=t;if(run>best)best=run;});
+  return best;
+}
+function bestWeek(){
+  var h=S.hist||[],best=0,i,j,c;
+  for(i=0;i<h.length;i++){c=0;for(j=0;j<h.length;j++){if(h[j].t>=h[i].t&&h[j].t<h[i].t+7*864e5)c++;}if(c>best)best=c;}
+  return best;
+}
+function renderStats(){
+  var h=S.hist||[],mins=0,i,j;for(i=0;i<h.length;i++)mins+=h[i].m;
+  var activeDays=0;Object.keys(S.days||{}).forEach(function(k){if(S.days[k].move>0)activeDays++;});
+  $('stat-all').innerHTML='<div class="meal"><span>Workouts</span><span>'+h.length+'</span></div><div class="meal"><span>Total minutes</span><span>'+mins+'</span></div><div class="meal"><span>Active days</span><span>'+activeDays+'</span></div>';
+  $('stat-rec').innerHTML='<div class="meal"><span>Longest streak</span><span>'+longestStreak()+' days</span></div><div class="meal"><span>Best week</span><span>'+bestWeek()+' workouts</span></div><div class="meal"><span>Programs finished</span><span>'+(S.programsDone||[]).length+'</span></div>';
+  var wh='',mx=1,wv=[];for(i=7;i>=0;i--){var s=Date.now()-i*7*864e5,e=s+7*864e5,m=0;for(j=0;j<h.length;j++){if(h[j].t>=s&&h[j].t<e)m+=h[j].m;}wv.push(m);mx=Math.max(mx,m);}
+  for(i=0;i<wv.length;i++){wh+='<div class="'+(i===7?'today':'')+'"><i style="height:'+Math.round(wv[i]/mx*80)+'px"></i>'+(i===7?'This wk':'-'+(7-i)+'wk')+'</div>';}
+  $('stat-weeks').innerHTML=wh;
+  var w=S.weight||[];
+  var ch=w.length>1?Math.round((w[w.length-1].w-w[0].w)*10)/10:0;
+  $('w-trend').innerHTML=w.length?'<p class="ok" style="margin:0">Latest: '+w[w.length-1].w+(w.length>1?' &middot; change since first: '+(ch>0?'+':'')+ch:'')+'</p>':'<p class="ok" style="margin:0">No entries yet.</p>';
+  $('w-list').innerHTML=w.slice(-6).reverse().map(function(r){return '<div class="meal"><span>'+r.w+'</span><span>'+new Date(r.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>';}).join('');
+  var ACH=[
+   {e:'🎬',n:'First steps',d:'Finish your first workout',t:function(){return h.length>=1;}},
+   {e:'🔟',n:'10 club',d:'Finish 10 workouts',t:function(){return h.length>=10;}},
+   {e:'🏅',n:'50 club',d:'Finish 50 workouts',t:function(){return h.length>=50;}},
+   {e:'🔥',n:'Week warrior',d:'Reach a 7-day streak',t:function(){return longestStreak()>=7;}},
+   {e:'👑',n:'Month master',d:'Reach a 30-day streak',t:function(){return longestStreak()>=30;}},
+   {e:'📋',n:'Program finisher',d:'Complete a guided program',t:function(){return (S.programsDone||[]).length>=1;}},
+   {e:'⚖️',n:'Tracker',d:'Log a weight entry',t:function(){return w.length>=1;}},
+   {e:'❤️',n:'Health watcher',d:'Log a blood pressure reading',t:function(){return (S.vitals||[]).length>=1;}}];
+  $('ach-list').innerHTML=ACH.map(function(a){var got=a.t();return '<div class="meal'+(got?'':' lock')+'"><span>'+a.e+' <b>'+a.n+'</b> &middot; '+a.d+'</span><span>'+(got?'Earned':'Locked')+'</span></div>';}).join('');
+}
+$('w-add').addEventListener('click',function(){var v=+$('w-in').value;if(!(v>0)){$('w-in').focus();return;}S.weight=(S.weight||[]).concat([{t:Date.now(),w:v}]).slice(-100);save();$('w-in').value='';renderStats();});
 
 /* Pro */
 var PORTAL='',plan='year',LINKS={month:'https://buy.stripe.com/9B6fZi8yeec64SN4nY9R60c',year:'https://buy.stripe.com/6oUbJ2aGmd821GB7Aa9R60b'};
