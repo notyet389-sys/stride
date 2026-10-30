@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stride: fitness and wellbeing</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1B2340">
+<style>
+:root{--bg:#F1F4F9;--surface:#fff;--ink:#1B2340;--mute:#6B7390;--line:#DDE2EE;--move:#4A4FE3;--water:#1FA7C9;--mind:#E0538F;--on:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12162B;--surface:#1C2240;--ink:#EEF0FA;--mute:#98A0C4;--line:#2D345A;--move:#8186FF;--water:#4CC6E6;--mind:#FF7FB0}}
+:root[data-theme="dark"]{--bg:#12162B;--surface:#1C2240;--ink:#EEF0FA;--mute:#98A0C4;--line:#2D345A;--move:#8186FF;--water:#4CC6E6;--mind:#FF7FB0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Bricolage Grotesque','DM Sans',system-ui,sans-serif;margin:0;letter-spacing:-.02em}
+main{max-width:480px;margin:0 auto;padding:20px 18px 110px}
+.view{display:none}.view.on{display:block}
+h1{font-size:34px;font-weight:800;line-height:1.05}
+.sub{color:var(--mute);margin:6px 0 22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px}
+.rings{display:flex;align-items:center;gap:18px}
+.rings svg{width:150px;height:150px;flex:none}
+.legend{display:grid;gap:10px;font-size:14px}
+.legend b{font-size:18px;display:block}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:12px 16px;font-weight:700;background:var(--ink);color:var(--bg)}
+button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+button.sel{background:var(--move);color:var(--on);border-color:var(--move)}
+button:focus-visible{outline:3px solid var(--move);outline-offset:2px}
+button.big{width:100%;padding:16px;font-size:17px}
+h3{font-size:18px;margin-bottom:12px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:100px}
+.bars div{flex:1;text-align:center;font-size:12px;color:var(--mute)}
+.bars i{display:block;background:var(--move);border-radius:8px 8px 4px 4px;min-height:4px;margin-bottom:6px;opacity:.9}
+.bars .today i{background:var(--mind)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav div{display:flex;max-width:480px;width:100%}
+nav button{flex:1;background:none;color:var(--mute);border-radius:0;padding:16px 4px;font-size:14px}
+nav button[aria-current="true"]{color:var(--move);box-shadow:inset 0 3px 0 var(--move)}
+.timer{text-align:center;padding:26px 18px}
+.timer .t{font-family:'Bricolage Grotesque',sans-serif;font-size:84px;font-weight:800;line-height:1;margin:10px 0}
+.timer .nm{font-size:22px;font-weight:700}
+.timer .nx{color:var(--mute);margin:6px 0 18px}
+.work{color:var(--move)}.rest{color:var(--water)}
+.stage{height:260px;display:grid;place-items:center;margin:6px 0 10px}
+.orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--mind),var(--move));display:grid;place-items:center;color:#fff;font-weight:700;transform:scale(1);transition:transform 4s ease-in-out;box-shadow:0 0 0 14px color-mix(in srgb,var(--mind) 18%,transparent)}
+.moods button{flex:1}
+.ok{color:var(--mute);font-size:13px;margin-top:10px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+input:focus-visible{outline:3px solid var(--move);outline-offset:1px}
+.meal{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:15px;gap:8px}
+.meal span:last-child{display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--mute)}
+button.sm{padding:2px 9px;border-radius:10px;font-size:16px}
+.bar{height:12px;border-radius:8px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:var(--mind);border-radius:8px;width:0}
+.plans{margin-bottom:14px;flex-wrap:nowrap}
+.plan{flex:1;display:grid;gap:4px;text-align:left;background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.plan span{font-weight:500;color:var(--mute)}
+.plan.sel{border-color:var(--move);box-shadow:0 0 0 2px var(--move)}
+.plan em{font-style:normal;color:var(--mind);font-size:13px}
+ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
+.cg{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){.orb{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<section class="view on" id="v-today">
+  <h1 id="greet">Today</h1>
+  <p class="sub" id="date"></p>
+  <div class="card"><div class="rings">
+    <svg viewBox="0 0 120 120" aria-label="Daily progress rings" id="rings"></svg>
+    <div class="legend">
+      <div><span class="dot" style="background:var(--move)"></span>Move<b id="l-move"></b></div>
+      <div><span class="dot" style="background:var(--water)"></span>Water<b id="l-water"></b></div>
+      <div><span class="dot" style="background:var(--mind)"></span>Mind<b id="l-mind"></b></div>
+    </div></div></div>
+  <div class="card"><h3>Quick log</h3>
+    <div class="row">
+      <button data-add="move" data-n="10">Add 10 min movement</button>
+      <button data-add="water" data-n="1" class="ghost">Add a glass of water</button>
+    </div></div>
+  <div class="card"><h3>Steps</h3>
+    <b id="st-n"></b>
+    <div class="bar"><i id="st-bar" style="background:var(--move)"></i></div>
+    <div class="row" style="margin-top:12px"><button id="st-go">Start counting</button><button class="ghost" id="st-add">Add 500 steps</button></div>
+    <p class="ok" id="st-note">Counting uses your phone motion sensor and only works while this page stays open. Treat it as an estimate.</p></div>
+  <div class="card"><h3>Calories</h3>
+    <div class="row" style="justify-content:space-between;align-items:baseline"><b id="cal-total"></b><span class="ok" id="cal-left" style="margin:0"></span></div>
+    <div class="bar"><i id="cal-bar"></i></div>
+    <div class="row" style="flex-wrap:nowrap;margin-top:12px"><input id="cal-name" placeholder="Meal or snack" aria-label="Meal name" style="flex:1"><input id="cal-kcal" type="number" inputmode="numeric" min="0" placeholder="kcal" aria-label="Calories" style="width:80px"><button id="cal-add">Add</button></div>
+    <div id="cal-list" style="margin-top:10px"></div>
+    <div class="cg">Daily goal <button class="ghost sm" data-goal="-100" aria-label="Lower goal">&minus;</button><b id="cal-goal" style="color:var(--ink)"></b><button class="ghost sm" data-goal="100" aria-label="Raise goal">+</button></div>
+    <div id="cal-week" style="margin-top:16px"></div></div>
+  <div class="card"><h3>Blood pressure</h3>
+    <div class="row" style="flex-wrap:nowrap"><input id="bp-s" type="number" inputmode="numeric" placeholder="Top" aria-label="Systolic" style="flex:1"><input id="bp-d" type="number" inputmode="numeric" placeholder="Bottom" aria-label="Diastolic" style="flex:1"><input id="bp-p" type="number" inputmode="numeric" placeholder="Pulse" aria-label="Pulse" style="flex:1"><button id="bp-add">Log</button></div>
+    <div id="bp-list" style="margin-top:10px"></div>
+    <p class="ok" id="bp-note">Enter a reading from a cuff. Phone sensors cannot measure blood pressure accurately. This is a log, not medical advice.</p></div>
+  <div class="card"><h3>How do you feel?</h3>
+    <div class="row moods" id="moods"></div>
+    <p class="ok" id="moodnote"></p></div>
+  <div class="card"><h3>This week: movement</h3><div class="bars" id="bars"></div>
+    <p class="ok" id="streak"></p></div>
+  <div class="card"><h3>Daily goals</h3>
+    <div style="display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin-bottom:12px">
+      <label for="g-move">Movement (minutes)</label><input id="g-move" type="number" inputmode="numeric" min="1">
+      <label for="g-water">Water (glasses)</label><input id="g-water" type="number" inputmode="numeric" min="1">
+      <label for="g-mind">Mindful time (minutes)</label><input id="g-mind" type="number" inputmode="numeric" min="1">
+      <label for="g-steps">Steps</label><input id="g-steps" type="number" inputmode="numeric" min="1">
+    </div>
+    <button class="big" id="g-save">Save goals</button>
+    <p class="ok" id="g-note"></p></div>
+</section>
+
+<section class="view" id="v-move">
+  <h1>Move</h1><p class="sub">Pick a routine. 30 seconds of work, 10 seconds of rest.</p>
+  <div class="row" id="routines" style="margin-bottom:14px"></div>
+  <div class="card timer">
+    <div class="ok" id="tphase">Ready</div>
+    <div class="t" id="tclock">0:30</div>
+    <div class="nm" id="tname">Choose a routine</div>
+    <div class="nx" id="tnext"></div>
+    <button class="big" id="tgo">Start routine</button>
+  </div>
+  <div class="card"><h3>Build your own <span class="ok" style="margin:0;font-weight:500">(Pro)</span></h3>
+    <input id="cb-name" placeholder="Workout name" aria-label="Workout name" style="width:100%;margin-bottom:10px">
+    <div class="row" style="flex-wrap:nowrap"><input id="cb-ex" placeholder="Exercise, e.g. Burpees" aria-label="Exercise" style="flex:1"><button id="cb-add">Add</button></div>
+    <div id="cb-list" style="margin-top:10px"></div>
+    <button class="big" id="cb-save" style="margin-top:12px">Save workout</button>
+    <p class="ok" id="cb-note">Each exercise runs 30 seconds with 10 seconds of rest.</p>
+    <div id="cb-mine"></div></div>
+  <div class="card"><h3>Workout history</h3>
+    <p class="ok" id="hist-sum" style="margin:0 0 8px"></p>
+    <div id="hist"></div></div>
+</section>
+
+<section class="view" id="v-mind">
+  <h1>Breathe</h1><p class="sub">Inhale 4, hold 4, exhale 6. Stop whenever you like.</p>
+  <div class="card"><div class="stage"><div class="orb" id="orb">Ready</div></div>
+    <button class="big" id="bgo">Start breathing</button>
+    <p class="ok" id="bnote"></p></div>
+</section>
+<section class="view" id="v-pro">
+  <h1>Stride Pro</h1><p class="sub" id="pro-status"></p>
+  <div class="row plans">
+    <button class="plan" id="plan-m"><b>Monthly</b><span>$7.99 / month</span></button>
+    <button class="plan sel" id="plan-y"><b>Yearly</b><span>$49.99 / year</span><em>Save 48%</em></button>
+  </div>
+  <div class="card"><h3>Free</h3>
+    <ul class="f"><li>3 routines: Full body, Core, Stretch</li><li>Calorie log with a daily goal of 2,000</li><li>Progress rings, mood check-in, breathing</li></ul>
+    <h3>Pro</h3>
+    <ul class="f" style="margin:0"><li>9 more routines, including HIIT burn, Yoga flow and Pilates core</li><li>Build and save your own workouts</li><li>Set your own calorie goal</li><li>Weekly calorie trends</li></ul></div>
+  <button class="big" id="pro-go"></button>
+  <a id="pro-link" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;color:var(--move);font-weight:700">Open checkout in a new tab</a>
+  <p class="ok" id="pro-note">Checkout and billing are handled securely by Stripe. After you pay, you return here and Pro unlocks automatically.</p>
+</section>
+</main>
+
+<nav><div id="nav">
+  <button data-v="today" aria-current="true">Today</button>
+  <button data-v="move">Move</button>
+  <button data-v="mind">Breathe</button>
+  <button data-v="pro">Pro</button>
+</div></nav>
+
+<script>
+(function(){
+var GOAL={move:30,water:8,mind:10,steps:10000},KEY='stride-v1';
+var S={days:{}};
+try{var r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)||S;}catch(e){}
+if(!S.days)S.days={};
+if(S.goals)Object.keys(S.goals).forEach(function(k){if(S.goals[k]>0)GOAL[k]=S.goals[k];});
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function key(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function day(k){k=k||key();return S.days[k]||(S.days[k]={move:0,water:0,mind:0,mood:''});}
+function $(id){return document.getElementById(id);}
+
+function ring(cx,r,col,p){var c=2*Math.PI*r;return '<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="60" cy="60" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+(c*(1-Math.min(p,1)))+'" transform="rotate(-90 60 60)"/>';}
+function render(){
+  var d=day(),h=new Date().getHours();
+  $('greet').textContent=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  $('date').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  $('rings').innerHTML=ring(60,52,'var(--move)',d.move/GOAL.move)+ring(60,40,'var(--water)',d.water/GOAL.water)+ring(60,28,'var(--mind)',d.mind/GOAL.mind);
+  $('l-move').textContent=d.move+' / '+GOAL.move+' min';
+  $('l-water').textContent=d.water+' / '+GOAL.water+' glasses';
+  $('l-mind').textContent=d.mind+' / '+GOAL.mind+' min';
+  var m=['Low','Okay','Good','Great'];
+  $('moods').innerHTML=m.map(function(x){return '<button class="ghost'+(d.mood===x?' sel':'')+'" data-mood="'+x+'">'+x+'</button>';}).join('');
+  $('moodnote').textContent=d.mood?'Logged: '+d.mood+'. Tap another to change it.':'Tap one to log how today feels.';
+  var bars='',streak=0,mx=GOAL.move;
+  for(var i=6;i>=0;i--){var dt=new Date();dt.setDate(dt.getDate()-i);var v=(S.days[key(dt)]||{}).move||0;mx=Math.max(mx,v);}
+  for(i=6;i>=0;i--){dt=new Date();dt.setDate(dt.getDate()-i);v=(S.days[key(dt)]||{}).move||0;
+    bars+='<div class="'+(i===0?'today':'')+'"><i style="height:'+Math.round(v/mx*80)+'px"></i>'+dt.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';}
+  $('bars').innerHTML=bars;
+  for(i=0;i<365;i++){dt=new Date();dt.setDate(dt.getDate()-i);var e=S.days[key(dt)];if(e&&e.move>=GOAL.move)streak++;else if(i>0)break;else if(i===0)continue;}
+  $('streak').textContent=streak?streak+'-day streak of hitting '+GOAL.move+' minutes.':'Hit '+GOAL.move+' minutes today to start a streak.';
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.add){var d=day();d[b.dataset.add]+=+b.dataset.n;save();render();}
+  if(b.dataset.mood){day().mood=b.dataset.mood;save();render();}
+  if(b.dataset.v){show(b.dataset.v);}
+});
+function show(v){
+  ['today','move','mind','pro'].forEach(function(n){$('v-'+n).classList.toggle('on',n===v);});
+  [].forEach.call($('nav').children,function(x){x.setAttribute('aria-current',x.dataset.v===v);});
+  if(v!=='move')stopW(); if(v!=='mind')stopB();
+  window.scrollTo(0,0);
+}
+
+/* Workouts */
+var R={
+ 'Full body':['Jumping jacks','Squats','Push-ups','Lunges','Plank','Mountain climbers'],
+ 'Core':['Crunches','Bicycle crunches','Plank','Leg raises','Russian twists','Dead bugs'],
+ 'Stretch':['Neck rolls','Shoulder circles','Forward fold','Hip opener','Quad stretch','Child pose'],
+ 'HIIT burn':['High knees','Burpees','Skaters','Squat jumps','Plank jacks','Sprint in place'],
+ 'Upper body':['Push-ups','Tricep dips','Pike push-ups','Superman','Shoulder taps','Plank up-downs'],
+ 'Legs & glutes':['Squats','Reverse lunges','Glute bridges','Wall sit','Side lunges','Calf raises'],
+ 'Yoga flow':['Cat-cow','Downward dog','Low lunge','Warrior II','Pigeon','Savasana'],
+ 'Cardio dance':['Step touch','Grapevine','Knee lifts','Jump and clap','Box step','Cool-down sway'],
+ 'Desk reset':['Neck release','Wrist circles','Seated twist','Chest opener','Standing hinge','Deep breaths'],
+ 'Tabata blast':['Jump squats','Push-up to plank','High knees','Reverse lunges','Mountain climbers','Burpees'],
+ 'Low impact':['March in place','Step jacks','Wall push-ups','Chair squats','Standing crunches','Arm circles'],
+ 'Pilates core':['Hundred','Roll-up','Single-leg stretch','Criss-cross','Swimming','Plank hold']};
+var cur=null,wt=null,idx=0,left=0,resting=false;
+var FREE=['Full body','Core','Stretch'];
+function isPro(){return !!(S.pro&&S.pro.until>Date.now());}
+function drawRoutines(){$('routines').innerHTML=Object.keys(R).map(function(n){var lock=!isPro()&&FREE.indexOf(n)<0;return '<button class="ghost" data-r="'+n.replace('&','&amp;')+'">'+n.replace('&','&amp;')+(lock?' (Pro)':'')+'</button>';}).join('');}
+$('routines').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(!isPro()&&FREE.indexOf(b.dataset.r)<0){show('pro');return;}stopW();cur=b.dataset.r;
+  [].forEach.call($('routines').children,function(x){x.classList.toggle('sel',x===b);});
+  $('tname').textContent=cur;$('tnext').textContent=R[cur].length+' exercises, about '+Math.round(R[cur].length*40/60)+' min';$('tclock').textContent='0:30';$('tclock').className='t';$('tphase').textContent='Ready';});
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function paint(){
+  var ex=R[cur];$('tclock').textContent=fmt(left);$('tclock').className='t '+(resting?'rest':'work');
+  $('tphase').textContent=resting?'Rest':'Work ('+(idx+1)+' of '+ex.length+')';
+  $('tname').textContent=resting?'Next: '+ex[idx+1]:ex[idx];
+  $('tnext').textContent=resting?'Shake it out':(idx+1<ex.length?'Up next: '+ex[idx+1]:'Last one');
+}
+function tick(){
+  left--;
+  if(left<=0){
+    if(!resting){ if(idx+1>=R[cur].length){finishW();return;} resting=true;left=10; }
+    else{resting=false;idx++;left=30;}
+  }
+  paint();
+}
+function startW(){if(!cur){$('tnext').textContent='Pick a routine first.';return;}idx=0;left=30;resting=false;paint();wt=setInterval(tick,1000);$('tgo').textContent='Stop';}
+function stopW(){if(wt){clearInterval(wt);wt=null;}$('tgo').textContent='Start routine';}
+function finishW(){stopW();var mins=Math.round(R[cur].length*30/60);day().move+=mins;S.hist=(S.hist||[]).concat([{t:Date.now(),n:cur,m:mins}]).slice(-100);save();render();renderHist();
+  $('tphase').textContent='Done';$('tclock').textContent='0:00';$('tclock').className='t';$('tname').textContent='Nice work';$('tnext').textContent='Added '+mins+' min to today.';}
+$('tgo').addEventListener('click',function(){wt?stopW():startW();});
+
+/* Breathing */
+var bt=null,bs=0,ph=0,pl=0,phases=[['Inhale',4,1.55],['Hold',4,1.55],['Exhale',6,1]];
+function setPhase(){var p=phases[ph];pl=p[1];var o=$('orb');o.style.transitionDuration=p[1]+'s';o.style.transform='scale('+p[2]+')';o.textContent=p[0];}
+function startB(){bs=0;ph=0;setPhase();$('bgo').textContent='Stop';$('bnote').textContent='';
+  bt=setInterval(function(){bs++;pl--;if(pl<=0){ph=(ph+1)%3;setPhase();}},1000);}
+function stopB(){if(!bt)return;clearInterval(bt);bt=null;var m=Math.round(bs/60);if(bs>=30&&m<1)m=1;
+  if(m>0){day().mind+=m;save();render();$('bnote').textContent='Added '+m+' min to today.';}
+  else $('bnote').textContent='Breathe for at least 30 seconds to log it.';
+  var o=$('orb');o.style.transform='scale(1)';o.textContent='Ready';$('bgo').textContent='Start breathing';}
+$('bgo').addEventListener('click',function(){bt?stopB():startB();});
+
+/* Calories */
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function kc(k){var e=S.days[k];return e&&e.cal?e.cal.reduce(function(a,m){return a+m.k;},0):0;}
+function renderCal(){
+  var d=day(),c=d.cal||[],t=kc(key()),g=S.goal||2000;
+  $('cal-total').textContent=t+' / '+g+' kcal';
+  $('cal-bar').style.width=Math.min(100,t/g*100)+'%';
+  $('cal-left').textContent=t<=g?(g-t)+' kcal left':(t-g)+' kcal over';
+  $('cal-goal').textContent=g;
+  $('cal-list').innerHTML=c.length?c.map(function(m,i){return '<div class="meal"><span>'+esc(m.n)+'</span><span>'+m.k+' kcal <button class="ghost sm" data-delcal="'+i+'" aria-label="Remove '+esc(m.n)+'">&times;</button></span></div>';}).join(''):'<p class="ok">Nothing logged yet. Add your first meal above.</p>';
+  if(isPro()){var mx=g,i,dt,v,h='';for(i=6;i>=0;i--){dt=new Date();dt.setDate(dt.getDate()-i);mx=Math.max(mx,kc(key(dt)));}
+    for(i=6;i>=0;i--){dt=new Date();dt.setDate(dt.getDate()-i);v=kc(key(dt));h+='<div class="'+(i===0?'today':'')+'"><i style="height:'+Math.round(v/mx*80)+'px;background:'+(v>g?'var(--mind)':'var(--water)')+'"></i>'+dt.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';}
+    $('cal-week').innerHTML='<div class="ok" style="margin:0 0 8px">Last 7 days (pink = over goal)</div><div class="bars">'+h+'</div>';}
+  else $('cal-week').innerHTML='<button class="ghost" data-v="pro" style="width:100%">Unlock weekly calorie trends with Pro</button>';
+}
+$('cal-add').addEventListener('click',function(){
+  var n=$('cal-name').value.trim(),k=Math.round(+$('cal-kcal').value);
+  if(!n||!(k>0)){$('cal-name').focus();return;}
+  var d=day();d.cal=d.cal||[];d.cal.push({n:n,k:k});save();$('cal-name').value='';$('cal-kcal').value='';renderCal();
+});
+$('cal-list').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.dataset.delcal===undefined)return;day().cal.splice(+b.dataset.delcal,1);save();renderCal();});
+$('cal-week').previousElementSibling.addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!b.dataset.goal)return;if(!isPro()){show('pro');return;}S.goal=Math.max(1000,(S.goal||2000)+(+b.dataset.goal));save();renderCal();});
+
+/* Custom workouts */
+if(S.custom)Object.keys(S.custom).forEach(function(n){R[n]=S.custom[n];});
+var draft=[];
+function renderDraft(){$('cb-list').innerHTML=draft.length?draft.map(function(x,i){return '<div class="meal"><span>'+esc(x)+'</span><button class="ghost sm" data-delcb="'+i+'" aria-label="Remove '+esc(x)+'">&times;</button></div>';}).join(''):'<p class="ok">Add at least 2 exercises.</p>';}
+function renderMine(){var k=Object.keys(S.custom||{});$('cb-mine').innerHTML=k.length?'<h3 style="margin-top:18px">Your workouts</h3>'+k.map(function(n){return '<div class="meal"><span>'+esc(n)+' ('+S.custom[n].length+' exercises)</span><button class="ghost sm" data-delw="'+esc(n)+'" aria-label="Delete '+esc(n)+'">&times;</button></div>';}).join(''):'';}
+function addEx(){var v=$('cb-ex').value.trim();if(!v){$('cb-ex').focus();return;}if(draft.length>=12){$('cb-note').textContent='Twelve exercises is the maximum.';return;}draft.push(v);$('cb-ex').value='';$('cb-ex').focus();renderDraft();}
+$('cb-add').addEventListener('click',addEx);
+$('cb-ex').addEventListener('keydown',function(e){if(e.key==='Enter')addEx();});
+$('cb-list').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.dataset.delcb===undefined)return;draft.splice(+b.dataset.delcb,1);renderDraft();});
+$('cb-save').addEventListener('click',function(){
+  var n=$('cb-name').value.trim();
+  if(!n){$('cb-name').focus();$('cb-note').textContent='Give your workout a name.';return;}
+  if(draft.length<2){$('cb-note').textContent='Add at least 2 exercises.';return;}
+  if(!isPro()){show('pro');return;}
+  if(R[n]&&!(S.custom&&S.custom[n])){$('cb-note').textContent='That name is taken by a built-in routine. Pick another.';return;}
+  S.custom=S.custom||{};S.custom[n]=draft.slice();R[n]=draft.slice();save();
+  draft=[];$('cb-name').value='';renderDraft();renderMine();drawRoutines();$('cb-note').textContent='Saved. It now appears in your routines above.';
+});
+$('cb-mine').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.dataset.delw===undefined)return;var n=b.dataset.delw;delete S.custom[n];delete R[n];if(cur===n){stopW();cur=null;$('tname').textContent='Choose a routine';$('tnext').textContent='';}save();renderMine();drawRoutines();});
+
+/* Goals and history */
+function fillGoals(){['move','water','mind','steps'].forEach(function(k){$('g-'+k).value=GOAL[k];});}
+$('g-save').addEventListener('click',function(){
+  var g={},ok=true;['move','water','mind','steps'].forEach(function(k){var v=Math.round(+$('g-'+k).value);if(v>0&&v<=100000)g[k]=v;else ok=false;});
+  if(!ok){$('g-note').textContent='Enter a whole number above 0 for every goal.';return;}
+  S.goals=g;Object.keys(g).forEach(function(k){GOAL[k]=g[k];});save();render();renderSteps();$('g-note').textContent='Goals saved.';
+});
+function renderHist(){
+  var h=S.hist||[],wk=h.filter(function(x){return x.t>Date.now()-7*864e5;}),m=wk.reduce(function(a,x){return a+x.m;},0);
+  $('hist-sum').textContent=wk.length?wk.length+' workout'+(wk.length>1?'s':'')+' and '+m+' min in the last 7 days.':'No workouts yet. Finish a routine to see it here.';
+  $('hist').innerHTML=h.slice(-8).reverse().map(function(x){return '<div class="meal"><span>'+esc(x.n)+'</span><span>'+x.m+' min &middot; '+new Date(x.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>';}).join('');
+}
+
+/* Steps */
+var sm=false,avg=9.8,lastS=0,pend=0;
+function renderSteps(){var n=day().steps||0;$('st-n').textContent=n.toLocaleString()+' / '+GOAL.steps.toLocaleString();$('st-bar').style.width=Math.min(100,n/GOAL.steps*100)+'%';$('st-go').textContent=sm?'Stop counting':'Start counting';}
+function onMotion(e){
+  var a=e.accelerationIncludingGravity;if(!a||a.x==null)return;
+  var m=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z);avg=avg*.9+m*.1;var t=Date.now();
+  if(m-avg>1.5&&t-lastS>300){lastS=t;var d=day();d.steps=(d.steps||0)+1;if(++pend>=10){save();pend=0;}renderSteps();}
+}
+function beginSteps(){window.addEventListener('devicemotion',onMotion);sm=true;$('st-note').textContent='Counting. Carry your phone in a pocket and keep this page open.';renderSteps();}
+$('st-go').addEventListener('click',function(){
+  if(sm){window.removeEventListener('devicemotion',onMotion);sm=false;save();pend=0;$('st-note').textContent='Stopped. Your steps are saved.';renderSteps();return;}
+  if(!('DeviceMotionEvent' in window)){$('st-note').textContent='This device or browser has no motion sensor. Use Add 500 steps instead.';return;}
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    DeviceMotionEvent.requestPermission().then(function(r){if(r==='granted')beginSteps();else $('st-note').textContent='Motion access was denied. Allow it in your browser settings, or add steps manually.';}).catch(function(){$('st-note').textContent='Could not get motion access. Add steps manually instead.';});
+  }else beginSteps();
+});
+$('st-add').addEventListener('click',function(){var d=day();d.steps=(d.steps||0)+500;save();renderSteps();});
+
+/* Blood pressure log */
+function bpCat(s,d){if(s>180||d>120)return 'Crisis range: get medical help';if(s>=140||d>=90)return 'Stage 2 high';if(s>=130||d>=80)return 'Stage 1 high';if(s>=120)return 'Elevated';return 'Normal';}
+function renderBP(){
+  var v=(S.vitals||[]).slice(-4).reverse();
+  $('bp-list').innerHTML=v.length?v.map(function(r){return '<div class="meal"><span><b>'+r.s+'/'+r.d+'</b>'+(r.p?' &middot; '+r.p+' bpm':'')+'</span><span>'+bpCat(r.s,r.d)+' &middot; '+new Date(r.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>';}).join(''):'<p class="ok">No readings yet.</p>';
+}
+$('bp-add').addEventListener('click',function(){
+  var s=Math.round(+$('bp-s').value),d=Math.round(+$('bp-d').value),p=Math.round(+$('bp-p').value)||0;
+  if(!(s>=70&&s<=250&&d>=40&&d<=150&&s>d)){$('bp-note').textContent='Check the numbers: top should be 70 to 250 and higher than bottom.';return;}
+  S.vitals=(S.vitals||[]).concat([{t:Date.now(),s:s,d:d,p:p}]).slice(-60);save();
+  $('bp-s').value=$('bp-d').value=$('bp-p').value='';
+  $('bp-note').textContent=bpCat(s,d)+'. One reading is not a diagnosis; talk to a clinician about trends.';renderBP();
+});
+
+/* Pro */
+var PORTAL='',plan='year',LINKS={month:'https://buy.stripe.com/9B6fZi8yeec64SN4nY9R60c',year:'https://buy.stripe.com/6oUbJ2aGmd821GB7Aa9R60b'};
+function renderPro(){
+  var a=isPro();
+  $('plan-m').className='plan'+(plan==='month'?' sel':'');$('plan-y').className='plan'+(plan==='year'?' sel':'');
+  $('pro-go').textContent=a?'Manage subscription':'Subscribe: '+(plan==='month'?'$7.99 / month':'$49.99 / year');$('pro-link').href=LINKS[plan];$('pro-link').style.display=a?'none':'block';
+  $('pro-status').textContent=a?'Pro is active until '+new Date(S.pro.until).toLocaleDateString()+'.':'You are on the free plan.';
+}
+$('plan-m').addEventListener('click',function(){plan='month';renderPro();});
+$('plan-y').addEventListener('click',function(){plan='year';renderPro();});
+$('pro-go').addEventListener('click',function(){
+  if(isPro()){if(PORTAL)window.open(PORTAL,'_blank','noopener');else $('pro-note').textContent='To cancel or change your plan, use the link in your Stripe receipt email.';return;}else{var w=window.open(LINKS[plan],'_blank','noopener');if(!w)$('pro-note').textContent='Your browser blocked the popup. Tap Open checkout in a new tab below.';return;}
+  save();renderPro();drawRoutines();renderCal();
+});
+
+function checkPro(){
+  if(!S.token)return;
+  fetch('/api/status?token='+encodeURIComponent(S.token)).then(function(r){return r.json();}).then(function(j){
+    if(j.pro)S.pro={until:Date.now()+2*864e5};else delete S.pro;
+    save();renderPro();drawRoutines();renderCal();
+  }).catch(function(){});
+}
+var proParam=new URLSearchParams(location.search).get('pro');
+if(proParam==='month'||proParam==='year'){
+  S.pro={until:Date.now()+(proParam==='year'?365:30)*864e5};
+  save();history.replaceState(null,'',location.pathname);show('pro');$('pro-note').textContent='Pro unlocked. Thank you!';
+}
+checkPro();
+render();renderCal();renderSteps();renderBP();renderPro();drawRoutines();renderDraft();renderMine();fillGoals();renderHist();
+})();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}</script>
+</body>
+</html>
