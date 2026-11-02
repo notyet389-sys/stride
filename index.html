@@ -188,9 +188,10 @@ ul.f{margin:0 0 16px;padding-left:20px;line-height:1.7}
 <section class="view" id="v-pro">
   <h1>Stride Pro</h1><p class="sub" id="pro-status"></p>
   <div class="row plans">
-    <button class="plan" id="plan-m"><b>Monthly</b><span>$7.99 / month</span></button>
-    <button class="plan sel" id="plan-y"><b>Yearly</b><span>$49.99 / year</span><em>Save 48%</em></button>
+    <button class="plan" id="plan-m"><b>Monthly</b><span>$1.99 / month</span></button>
+    <button class="plan sel" id="plan-y"><b>Yearly</b><span>$10 / year</span><em>Save 58%</em></button>
   </div>
+  <p class="ok">Try Pro free for 3 days — all Pro features unlocked during the trial. After that, $1.99/month or $10/year — yearly saves 58% versus paying monthly ($1.99 x 12 = $23.88).</p>
   <div class="card"><h3>Free</h3>
     <ul class="f"><li>3 routines: Full body, Core, Stretch</li><li>Calorie log with a daily goal of 2,000</li><li>Progress rings, mood check-in, breathing</li><li>Pulse, your workout buddy — daily motivation and workout voice cues</li></ul>
     <h3>Pro</h3>
@@ -219,6 +220,16 @@ try{var r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)||S;}catch(e){}
 if(!S.days)S.days={};
 if(S.goals)Object.keys(S.goals).forEach(function(k){if(S.goals[k]>0)GOAL[k]=S.goals[k];});
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+/* 3-day free trial (added alongside paid Pro; paid ?pro= unlock unchanged) */
+var TRIAL_KEY='stride_trial_start';
+var _trialStartRaw=null;
+try{_trialStartRaw=localStorage.getItem(TRIAL_KEY);}catch(e){}
+if(!_trialStartRaw){_trialStartRaw=String(Date.now());try{localStorage.setItem(TRIAL_KEY,_trialStartRaw);}catch(e){}}
+var trialStart=parseInt(_trialStartRaw,10)||Date.now();
+var daysUsed=Math.floor((Date.now()-trialStart)/86400000);
+var trialActive=daysUsed<3;
+var trialDaysLeft=Math.max(0,3-daysUsed);
+function hasAccess(){return isPro()||trialActive;}
 function key(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function day(k){k=k||key();return S.days[k]||(S.days[k]={move:0,water:0,mind:0,mood:''});}
 function $(id){return document.getElementById(id);}
@@ -252,7 +263,7 @@ document.addEventListener('click',function(e){
   if(b.dataset.v){show(b.dataset.v);}
 });
 function show(v){
-  if(!isPro()&&(v==='programs'||v==='stats'))v='pro';
+  if(!hasAccess()&&(v==='programs'||v==='stats'))v='pro';
   ['today','move','programs','stats','buddy','mind','pro'].forEach(function(n){$('v-'+n).classList.toggle('on',n===v);});
   [].forEach.call($('nav').children,function(x){x.setAttribute('aria-current',x.dataset.v===v);});
   if(v!=='move')stopW(); if(v!=='mind')stopB();
@@ -282,8 +293,8 @@ var R={
 var cur=null,wt=null,idx=0,left=0,resting=false;
 var FREE=['Full body','Core','Stretch'];
 function isPro(){return !!(S.pro&&S.pro.until>Date.now());}
-function drawRoutines(){$('routines').innerHTML=Object.keys(R).map(function(n){var lock=!isPro()&&FREE.indexOf(n)<0;return '<button class="ghost" data-r="'+n.replace('&','&amp;')+'">'+n.replace('&','&amp;')+(lock?' (Pro)':'')+'</button>';}).join('');}
-$('routines').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(!isPro()&&FREE.indexOf(b.dataset.r)<0){show('pro');return;}stopW();cur=b.dataset.r;
+function drawRoutines(){$('routines').innerHTML=Object.keys(R).map(function(n){var lock=!hasAccess()&&FREE.indexOf(n)<0;return '<button class="ghost" data-r="'+n.replace('&','&amp;')+'">'+n.replace('&','&amp;')+(lock?' (Pro)':'')+'</button>';}).join('');}
+$('routines').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(!hasAccess()&&FREE.indexOf(b.dataset.r)<0){show('pro');return;}stopW();cur=b.dataset.r;
   [].forEach.call($('routines').children,function(x){x.classList.toggle('sel',x===b);});
   $('tname').textContent=cur;$('tnext').textContent=R[cur].length+' exercises, about '+Math.round(R[cur].length*40/60)+' min';$('tclock').textContent='0:30';$('tclock').className='t';$('tphase').textContent='Ready';$('t-pulse').textContent='';});
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
@@ -328,7 +339,7 @@ function renderCal(){
   $('cal-left').textContent=t<=g?(g-t)+' kcal left':(t-g)+' kcal over';
   $('cal-goal').textContent=g;
   $('cal-list').innerHTML=c.length?c.map(function(m,i){return '<div class="meal"><span>'+esc(m.n)+'</span><span>'+m.k+' kcal <button class="ghost sm" data-delcal="'+i+'" aria-label="Remove '+esc(m.n)+'">&times;</button></span></div>';}).join(''):'<p class="ok">Nothing logged yet. Add your first meal above.</p>';
-  if(isPro()){var mx=g,i,dt,v,h='';for(i=6;i>=0;i--){dt=new Date();dt.setDate(dt.getDate()-i);mx=Math.max(mx,kc(key(dt)));}
+  if(hasAccess()){var mx=g,i,dt,v,h='';for(i=6;i>=0;i--){dt=new Date();dt.setDate(dt.getDate()-i);mx=Math.max(mx,kc(key(dt)));}
     for(i=6;i>=0;i--){dt=new Date();dt.setDate(dt.getDate()-i);v=kc(key(dt));h+='<div class="'+(i===0?'today':'')+'"><i style="height:'+Math.round(v/mx*80)+'px;background:'+(v>g?'var(--mind)':'var(--water)')+'"></i>'+dt.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';}
     $('cal-week').innerHTML='<div class="ok" style="margin:0 0 8px">Last 7 days (pink = over goal)</div><div class="bars">'+h+'</div>';}
   else $('cal-week').innerHTML='<button class="ghost" data-v="pro" style="width:100%">Unlock weekly calorie trends with Pro</button>';
@@ -339,7 +350,7 @@ $('cal-add').addEventListener('click',function(){
   var d=day();d.cal=d.cal||[];d.cal.push({n:n,k:k});save();$('cal-name').value='';$('cal-kcal').value='';renderCal();
 });
 $('cal-list').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.dataset.delcal===undefined)return;day().cal.splice(+b.dataset.delcal,1);save();renderCal();});
-$('cal-week').previousElementSibling.addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!b.dataset.goal)return;if(!isPro()){show('pro');return;}S.goal=Math.max(1000,(S.goal||2000)+(+b.dataset.goal));save();renderCal();});
+$('cal-week').previousElementSibling.addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!b.dataset.goal)return;if(!hasAccess()){show('pro');return;}S.goal=Math.max(1000,(S.goal||2000)+(+b.dataset.goal));save();renderCal();});
 
 /* Custom workouts */
 if(S.custom)Object.keys(S.custom).forEach(function(n){R[n]=S.custom[n];});
@@ -354,7 +365,7 @@ $('cb-save').addEventListener('click',function(){
   var n=$('cb-name').value.trim();
   if(!n){$('cb-name').focus();$('cb-note').textContent='Give your workout a name.';return;}
   if(draft.length<2){$('cb-note').textContent='Add at least 2 exercises.';return;}
-  if(!isPro()){show('pro');return;}
+  if(!hasAccess()){show('pro');return;}
   if(R[n]&&!(S.custom&&S.custom[n])){$('cb-note').textContent='That name is taken by a built-in routine. Pick another.';return;}
   S.custom=S.custom||{};S.custom[n]=draft.slice();R[n]=draft.slice();save();
   draft=[];$('cb-name').value='';renderDraft();renderMine();drawRoutines();$('cb-note').textContent='Saved. It now appears in your routines above.';
@@ -443,7 +454,7 @@ function renderPrograms(){
   }
   $('prog-list').innerHTML=PROGRAMS.map(function(pr){var active=a&&a.active===pr.id;return '<div class="card"><h3>'+pr.name+'</h3><p class="ok" style="margin:0 0 12px">'+pr.desc+' &middot; '+pr.days.length+' days</p><button class="ghost" data-join="'+pr.id+'" '+(active?'disabled':'')+'>'+(active?'Active':'Join program')+'</button></div>';}).join('');
 }
-$('prog-list').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!b.dataset.join)return;if(!isPro()){show('pro');return;}S.programs={active:b.dataset.join,start:key(),done:{}};save();renderPrograms();});
+$('prog-list').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!b.dataset.join)return;if(!hasAccess()){show('pro');return;}S.programs={active:b.dataset.join,start:key(),done:{}};save();renderPrograms();});
 $('prog-active').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
   if(b.id==='prog-mark'){var a=S.programs;if(!a)return;var idx=progDayIndex();if(idx<0)return;a.done=a.done||{};a.done[idx]=true;save();renderPrograms();}
   if(b.id==='prog-go'){show('move');}
@@ -588,12 +599,12 @@ $('buddy-save').addEventListener('click',function(){
 $('buddy-clear').addEventListener('click',function(){delete S.buddyKey;save();renderKeyNote();});
 
 /* Pro */
-var PORTAL='',plan='year',LINKS={month:'https://buy.stripe.com/9B6fZi8yeec64SN4nY9R60c',year:'https://buy.stripe.com/6oUbJ2aGmd821GB7Aa9R60b'};
+var PORTAL='',plan='year',LINKS={month:'https://buy.stripe.com/aFa00k4hY6JE4SN4nY9R60X',year:'https://buy.stripe.com/cNi6oI7uaaZU1GB6w69R60Y'};
 function renderPro(){
   var a=isPro();
   $('plan-m').className='plan'+(plan==='month'?' sel':'');$('plan-y').className='plan'+(plan==='year'?' sel':'');
-  $('pro-go').textContent=a?'Manage subscription':'Subscribe: '+(plan==='month'?'$7.99 / month':'$49.99 / year');$('pro-link').href=LINKS[plan];$('pro-link').style.display=a?'none':'block';
-  $('pro-status').textContent=a?'Pro is active until '+new Date(S.pro.until).toLocaleDateString()+'.':'You are on the free plan.';
+  $('pro-go').textContent=a?'Manage subscription':'Subscribe: '+(plan==='month'?'$1.99 / month':'$10 / year');$('pro-link').href=LINKS[plan];$('pro-link').style.display=a?'none':'block';
+  $('pro-status').textContent=a?'Pro is active until '+new Date(S.pro.until).toLocaleDateString()+'.':(trialActive?'Free trial: '+trialDaysLeft+' day(s) left — all Pro features are unlocked during your 3-day free trial.':'You are on the free plan.');
 }
 $('plan-m').addEventListener('click',function(){plan='month';renderPro();});
 $('plan-y').addEventListener('click',function(){plan='year';renderPro();});
